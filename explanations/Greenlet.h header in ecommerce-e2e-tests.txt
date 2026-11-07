@@ -1,0 +1,34 @@
+Greenlet.h header in ecommerce-e2e-tests
+========================================
+
+File:
+  .venv\Include\site\python3.12\greenlet\greenlet.h
+
+Summary
+-------
+You don't need to touch this file. It isn't part of your project. It is a C
+header that comes with the "greenlet" package, which Playwright installed for you.
+
+What greenlet is
+----------------
+A library that lets Python pause one function and switch to another within a
+single thread. These pausable functions are called "lightweight coroutines".
+
+Why it's here
+-------------
+Playwright's synchronous API (from playwright.sync_api import ...), which
+pytest-playwright uses, runs on async code underneath. Greenlet lets your plain,
+non-async test code call that async engine as if it were ordinary step-by-step
+code.
+
+What the .h file is
+-------------------
+A C header file. It defines the PyGreenlet struct (lines 22-27) and the C
+functions that other compiled C extensions would use to work with greenlets.
+Python code never reads it. It would only matter if you compiled your own C
+extension on top of greenlet.
+
+General note about .venv
+------------------------
+Everything inside .venv is generated when you install packages, so you can
+ignore it. If you delete .venv, you can rebuild it with pip install.

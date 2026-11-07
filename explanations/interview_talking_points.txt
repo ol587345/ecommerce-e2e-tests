@@ -1,0 +1,68 @@
+Interview talking points
+========================
+
+One-sentence pitch
+------------------
+"An end-to-end suite in Python, pytest and Playwright covering UI, API and a
+hybrid API-plus-UI flow for two demo shops, built with the Page Object Model
+and designed to be stable and fast."
+
+Points worth raising (and the file that shows each)
+---------------------------------------------------
+1. Three test levels: UI, API, hybrid.
+     tests\ui, tests\api, tests\hybrid. Run separately with pytest -m.
+
+2. Hybrid test: API for setup and cleanup, UI only for what is under test.
+     tests\hybrid\test_api_user_ui_login.py + api_user fixture.
+     "Creating the user through the UI would take ~15 fields; the API does it
+     in one call."
+
+3. Flakiness handled at the root cause.
+     Ad pop-ups on Automation Exercise covered buttons at random. Instead of
+     retries or sleeps, the suite blocks the ad hosts at the network level
+     (context.route in conftest.py).
+     Also: a real race condition was found and fixed. A test read the cart
+     before navigation finished; go_to_cart() now waits for the URL.
+
+4. No sleep() anywhere. Playwright's expect() retries until true.
+
+5. Test isolation.
+     Every test gets a fresh browser context and its own unique user
+     (uuid-based email), and the user is deleted afterwards. Tests can run in
+     any order.
+
+6. Negative testing.
+     Wrong HTTP methods, missing parameters, unknown users, duplicate email,
+     empty/invalid form fields, locked-out user.
+
+7. API quirk noticed and handled.
+     The API returns HTTP 200 for errors; the real status is the JSON
+     "responseCode". The ApiResult wrapper makes that explicit.
+
+8. Data-driven tests with @pytest.mark.parametrize. One function, many cases,
+   each reported separately.
+
+9. Config through environment variables. The same code can run against
+   another environment or on CI without edits.
+
+10. Reporting and debugging: HTML report every run; Playwright traces and
+    screenshots on failure (--tracing retain-on-failure).
+
+Likely questions
+----------------
+Q: Why Page Objects?
+A: Locators live in one place. A UI change means one fix, and tests read
+   like business steps.
+
+Q: Why data-test / data-qa selectors?
+A: They exist only for testing, so styling or layout changes do not break them.
+
+Q: How would you run this in CI?
+A: A GitHub Actions job: pip install -r requirements.txt, playwright install
+   --with-deps chromium, pytest, then upload reports\report.html as an
+   artifact. (Possible next step for this project.)
+
+Q: What would you add next?
+A: CI pipeline, parallel runs with pytest-xdist, cross-browser runs
+   (--browser firefox --browser webkit), and saving the logged-in state once
+   (storage_state) so UI tests skip the login screen.

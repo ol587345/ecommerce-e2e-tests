@@ -1,0 +1,57 @@
+tests\conftest.py and fixtures
+==============================
+
+What conftest.py is
+-------------------
+A special file pytest loads automatically before running tests. Fixtures and
+hooks defined in it are available to every test in that folder and below,
+without importing anything.
+
+What a fixture is
+-----------------
+A function that prepares something a test needs. A test asks for it simply by
+naming it as a parameter:
+
+    def test_add_one_item_to_cart(sauce_inventory, page):
+
+pytest sees "sauce_inventory" and "page", runs those fixtures first and passes
+in the results. Code after "yield" in a fixture runs AFTER the test (cleanup),
+even if the test failed.
+
+Fixtures from pytest-playwright (built in, not in our file)
+-----------------------------------------------------------
+  browser   one Chromium browser for the whole run
+  context   a fresh, isolated browser profile per test (own cookies/storage),
+            so tests cannot affect each other
+  page      a new tab in that context
+
+Our fixtures (tests\conftest.py)
+--------------------------------
+_browser_setup  (autouse=True -> runs for every test automatically)
+    Only if the test uses "page":
+      - sets the default timeout (DEFAULT_TIMEOUT_MS)
+      - context.route("**/*", _block_ads): every network request the browser
+        makes goes through _block_ads, which aborts requests to Google ad
+        hosts and lets everything else continue.
+    API tests do not use "page", so no browser is ever started for them.
+
+api  (scope="session")
+    One AutomationExerciseAPI client shared by the whole run.
+
+api_user
+    Setup:    creates a brand-new user through the API (fails clearly if the
+              site refuses).
+    Test:     receives the user dict (email, password, name, ...).
+    Teardown: deletes the user through the API, so the shared site is not
+              filled with junk accounts.
+
+sauce_inventory
+    Logs in to Sauce Demo as standard_user and returns the InventoryPage.
+    Cart, checkout and sorting tests start from here, so they do not repeat
+    the login steps.
+
+pytest_collection_modifyitems  (a hook, not a fixture)
+    Runs once after pytest finds all tests. It adds a marker based on the
+    folder: tests in tests\ui get "ui", tests\api get "api", tests\hybrid get
+    "hybrid". That is what makes "pytest -m api" work without writing
+    @pytest.mark.api on every test.

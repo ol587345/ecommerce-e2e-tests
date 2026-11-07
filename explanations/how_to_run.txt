@@ -1,0 +1,56 @@
+How to run the tests
+====================
+
+All commands are run from the project folder:
+  C:\Users\danie\Documents\olga\ecommerce-e2e-tests
+
+First-time setup (only if .venv is missing)
+-------------------------------------------
+  python -m venv .venv
+  .\.venv\Scripts\activate
+  pip install -r requirements.txt
+  playwright install chromium
+
+Activate the virtual environment (each new terminal)
+----------------------------------------------------
+  .\.venv\Scripts\activate
+
+Run tests
+---------
+  pytest                         Run everything (37 tests, ~30 seconds)
+  pytest -m api                  Only API tests (no browser)
+  pytest -m ui                   Only UI tests
+  pytest -m hybrid               Only the hybrid test
+  pytest tests\ui\saucedemo      Only one folder
+  pytest -k checkout             Only tests whose name contains "checkout"
+
+Useful options
+--------------
+  --headed                       Show the browser window while tests run
+  --slowmo 500                   Wait 500 ms between browser actions (watch it)
+  --browser firefox              Use Firefox (run "playwright install firefox" first)
+  --tracing retain-on-failure    Save a Playwright trace for failed tests
+  --screenshot only-on-failure   Save a screenshot for failed tests
+  -x                             Stop at the first failure
+
+Example: watch the checkout test in a visible, slowed-down browser
+  pytest -k full_checkout --headed --slowmo 500
+
+The report
+----------
+Every run writes reports\report.html. Open it in a browser to see which tests
+passed or failed, how long each took and the error for each failure.
+
+Traces (for debugging failures)
+-------------------------------
+With --tracing retain-on-failure, a trace.zip is saved under test-results\.
+Open it with:
+  playwright show-trace test-results\<folder>\trace.zip
+It replays the test step by step, with DOM snapshots and network calls.
+
+Settings you can change without touching the code
+-------------------------------------------------
+Set an environment variable before running, e.g. in PowerShell:
+  $env:DEFAULT_TIMEOUT_MS = "30000"     longer waits on a slow connection
+  $env:AE_BASE_URL = "https://..."      point at another copy of the site
+See framework_explained.txt for the full list.

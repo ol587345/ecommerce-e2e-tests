@@ -1,0 +1,83 @@
+UI tests (tests\ui\)
+====================
+
+These open a real Chromium browser (headless - invisible - by default) and use
+the site like a person would.
+
+Key tools used in the tests
+---------------------------
+expect(locator).to_have_text("...")
+    Playwright's assertion. It RETRIES automatically for up to the timeout
+    until the condition is true. That is why the tests have no sleep() calls:
+    expect() waits exactly as long as needed and no longer.
+
+@pytest.mark.parametrize
+    Runs the same test several times with different data. Each run shows up
+    as its own test in the results, e.g.
+    test_invalid_login_shows_error[chromium-empty-username].
+    "ids=" gives each case a readable name.
+
+[chromium] in test names
+    Added by pytest-playwright to show which browser ran the test.
+
+
+Sauce Demo - tests\ui\saucedemo\
+--------------------------------
+test_sauce_login.py
+  test_valid_login_opens_products_page
+      standard_user logs in -> URL ends in /inventory.html, title "Products".
+  test_invalid_login_shows_error  (4 cases)
+      wrong password, unknown user, empty username, empty password ->
+      the correct error text appears and the user stays on the login page.
+  test_locked_out_user_cannot_log_in
+      locked_out_user -> "Sorry, this user has been locked out."
+
+test_sauce_cart.py
+  test_add_one_item_to_cart
+      Add backpack -> cart badge shows 1 -> cart page lists only the backpack.
+  test_remove_item_updates_cart
+      Add 2 items -> badge 2 -> remove one -> badge 1 -> cart has the other.
+
+test_sauce_checkout.py
+  test_full_checkout_flow
+      Reads the prices of 2 products, adds them, goes through checkout,
+      checks "Item total" equals the sum of the prices (pytest.approx avoids
+      tiny decimal rounding errors), finishes, checks
+      "Thank you for your order!".
+  test_checkout_form_validation  (3 cases)
+      Leave first name / last name / postal code empty -> matching
+      "... is required" error.
+
+test_sauce_sorting.py
+  test_sort_products  (4 cases: az, za, lohi, hilo)
+      Choose a sort option, read the names or prices shown, and check the list
+      equals the same list sorted in Python. getattr(sauce_inventory,
+      "names")() just calls sauce_inventory.names() - the method name comes
+      from the parameter.
+
+
+Automation Exercise - tests\ui\automation_exercise\
+---------------------------------------------------
+test_ae_products.py  (sorting/filtering on the second site)
+  test_search_products
+      Search "Jeans" -> heading "Searched Products" -> every result name
+      contains "jeans".
+  test_filter_by_category
+      Sidebar Women > Dress -> heading "Women - Dress Products", products shown.
+  test_filter_by_brand_matches_sidebar_count
+      Read the "(6)" count next to Polo, click Polo -> heading
+      "Brand - Polo Products" and exactly that many products shown.
+      (The site checks itself against its own number.)
+
+test_ae_login_form.py  (form validation)
+  test_empty_email_is_blocked_by_browser_validation
+      The email field has the HTML "required" attribute, so the BROWSER blocks
+      the submit and shows a tooltip. That tooltip is not part of the page, so
+      the test reads it with JavaScript: el.validationMessage. Non-empty means
+      the browser stopped the form. The URL must still be /login.
+  test_badly_formatted_email_is_rejected
+      "not-an-email" in a type="email" field -> el.validity.typeMismatch is
+      true (browser says "this is not an email").
+  test_wrong_credentials_show_error
+      Real submit with an unknown user -> server answers
+      "Your email or password is incorrect!" and nobody is logged in.

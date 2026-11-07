@@ -1,0 +1,70 @@
+The framework\ folder
+=====================
+
+Reusable code that the tests use. None of it is a test itself.
+
+framework\__init__.py
+---------------------
+Empty. It marks framework\ as a Python package so tests can write
+"from framework.config import ...".
+
+framework\config.py - settings
+------------------------------
+Every value uses os.getenv("NAME", default): it reads an environment variable
+if one is set, otherwise uses the default. This lets you change settings
+(e.g. on a CI server) without editing code.
+
+  AE_BASE_URL          Automation Exercise website  (https://automationexercise.com)
+  AE_API_URL           Its API                      (<AE_BASE_URL>/api)
+  SAUCE_BASE_URL       Sauce Demo website           (https://www.saucedemo.com)
+  SAUCE_PASSWORD       Shared Sauce Demo password   (secret_sauce)
+  SAUCE_STANDARD_USER  Normal user                  (standard_user)
+  SAUCE_LOCKED_USER    User the site refuses        (locked_out_user)
+  BLOCKED_HOSTS        Google ad/analytics domains the browser is not allowed
+                       to load. Automation Exercise shows full-screen ads that
+                       randomly cover buttons - the biggest cause of flaky
+                       tests on that site. Blocking them at the network level
+                       removes the problem completely.
+  DEFAULT_TIMEOUT_MS   How long Playwright waits for an element (15000 = 15 s)
+  API_TIMEOUT_S        How long an API request may take (30 s)
+
+framework\api_client.py - the API wrapper
+-----------------------------------------
+Instead of every test building URLs and calling requests itself, tests call
+readable methods:
+
+  api.get_products()                  GET    /api/productsList
+  api.get_brands()                    GET    /api/brandsList
+  api.search_product("jeans")         POST   /api/searchProduct
+  api.create_account(user)            POST   /api/createAccount
+  api.verify_login(email, password)   POST   /api/verifyLogin
+  api.get_user_by_email(email)        GET    /api/getUserDetailByEmail
+  api.delete_account(email, password) DELETE /api/deleteAccount
+  api.call(method, endpoint, ...)     Any request - used by negative tests to
+                                      send WRONG methods on purpose
+
+Each method returns an ApiResult with:
+  .http_status   the real HTTP status code
+  .body          the JSON body as a Python dict
+  .code          body["responseCode"]
+  .message       body["message"]
+
+IMPORTANT quirk of this API: it nearly always answers with HTTP 200, even for
+errors. The real result is inside the JSON as "responseCode" (200, 201, 400,
+404, 405). That is why tests check result.code, not result.http_status.
+Also, the Content-Type header says text/html although the body is JSON;
+response.json() still parses it fine.
+
+It uses a requests.Session, which reuses the network connection between calls
+(faster than opening a new one each time).
+
+framework\data.py - test data
+-----------------------------
+new_user() returns a dict with every field the createAccount API needs
+(name, email, password, birth date, address, ...), filled with realistic fake
+values from the Faker library.
+
+The email is built from a random uuid (qa_3f9a1c...@example.com) rather than
+Faker's email, because the site is shared by thousands of people and a
+"realistic" email could already be registered. Every call gives a new unique
+user, so tests never depend on each other.

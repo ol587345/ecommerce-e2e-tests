@@ -1,0 +1,68 @@
+The pages\ folder - Page Object Model (POM)
+===========================================
+
+What a Page Object is
+---------------------
+A Python class that represents one web page. It knows:
+  - the LOCATORS (how to find each element: field, button, message)
+  - the ACTIONS you can do on the page (login, add to cart, sort)
+
+Tests use the page object instead of raw selectors:
+
+  Without POM:  page.locator('[data-test="username"]').fill("standard_user")
+                page.locator('[data-test="password"]').fill("secret_sauce")
+                page.locator('[data-test="login-button"]').click()
+
+  With POM:     SauceLoginPage(page).open().login("standard_user", "secret_sauce")
+
+Why: if the site renames a button, you fix it in one file. Tests also read
+like plain English.
+
+Rule used here: page objects DO things and expose locators; the TESTS do the
+checking (assert / expect). That keeps each test's purpose visible.
+
+How elements are found
+----------------------
+Both sites add special attributes just for testers:
+  Sauce Demo:           data-test="..."   e.g. [data-test="login-button"]
+  Automation Exercise:  data-qa="..."     e.g. [data-qa="login-email"]
+These do not change when designers change colours or layout, so they are the
+most stable choice. Where a site has no such attribute, an id (#search_product)
+or the visible text ("Logged in as") is used.
+
+pages\saucedemo\
+----------------
+login_page.py      SauceLoginPage
+                   open(), login(username, password), .error message
+
+inventory_page.py  InventoryPage (the products list after login)
+                   add_to_cart(name), remove_from_cart(name), sort_by(option),
+                   names(), prices(), price_of(name), go_to_cart()
+                   slug() turns "Sauce Labs Backpack" into
+                   "sauce-labs-backpack", because Sauce Demo builds button ids
+                   like data-test="add-to-cart-sauce-labs-backpack".
+                   go_to_cart() waits for the cart URL before returning -
+                   without that wait a test once read the product list of the
+                   OLD page (a classic timing bug).
+
+cart_page.py       CartPage: names() of items in the cart, checkout()
+
+checkout_page.py   CheckoutPage - all 3 checkout steps:
+                   fill_information(first, last, postal), .error,
+                   item_total_value() reads "Item total: $39.98" -> 39.98,
+                   finish(), .complete_header
+
+pages\automation_exercise\
+--------------------------
+login_page.py      AELoginPage
+                   open(), login(email, password), .error,
+                   .logged_in_as (header link "Logged in as <name>"),
+                   email_validation_message() - reads the browser's own
+                   HTML5 validation text (e.g. "Please fill out this field.")
+
+products_page.py   ProductsPage
+                   open(), search(term), filter_by_category("Women", "Dress"),
+                   filter_by_brand("Polo"), brand_count_in_sidebar("Polo")
+                   (the "(6)" next to the brand name), names(), .heading
+
+Empty __init__.py files make each folder an importable Python package.

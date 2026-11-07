@@ -1,0 +1,48 @@
+pytest.ini, requirements.txt and README.md
+==========================================
+
+pytest.ini - pytest's settings file
+-----------------------------------
+  testpaths = tests
+      Look for tests only in tests\ (never inside .venv).
+  pythonpath = .
+      Add the project folder to Python's import path, so tests can import
+      "framework" and "pages".
+  addopts = -v --html=reports/report.html --self-contained-html
+      Options added to every run:
+        -v                       verbose: one line per test
+        --html=...               write the HTML report (from pytest-html)
+        --self-contained-html    put CSS inside the report so it is one file
+  markers = ui / api / hybrid
+      Registers the marker names so pytest does not warn about unknown
+      markers. conftest.py applies them automatically by folder.
+
+Test discovery rules (pytest defaults)
+  files named test_*.py, functions named test_*.
+  Test file names are unique (test_sauce_login.py, test_ae_login_form.py)
+  because pytest gets confused by two files with the same name in
+  different folders.
+
+requirements.txt - exact packages
+---------------------------------
+  pytest              test runner
+  pytest-playwright   gives the browser/context/page fixtures and the
+                      --headed / --browser / --tracing options
+  playwright          browser automation library
+  pytest-html         HTML report
+  requests            HTTP client for API tests
+  Faker               fake names, addresses, passwords
+
+Versions are pinned (==) to the ones that were tested, so the suite behaves the
+same on any computer. Install with:  pip install -r requirements.txt
+After installing playwright, also run:  playwright install chromium
+(that downloads the browser itself).
+
+README.md
+---------
+A short introduction shown first on GitHub: what the project tests and how to
+run it. Details live in this explanations\ folder.
+
+reports\
+--------
+Created automatically when tests run. Contains report.html.

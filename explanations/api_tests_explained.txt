@@ -1,0 +1,62 @@
+API tests (tests\api\)
+======================
+
+These send HTTP requests straight to https://automationexercise.com/api with
+the "requests" library. No browser is started, so they are very fast (the 14
+API tests take a few seconds).
+
+Remember: this API returns HTTP 200 even for errors. The real status is in the
+JSON body as "responseCode". The tests check result.code (that field).
+See framework_explained.txt.
+
+The official list of endpoints is at https://automationexercise.com/api_list
+
+
+test_products_api.py
+--------------------
+test_get_all_products
+    GET productsList -> responseCode 200, at least one product, and every
+    product has id, name, price, brand and category.
+    ("PRODUCT_FIELDS <= product.keys()" means "all these fields are present".)
+test_get_all_brands
+    GET brandsList -> 200 and no brand has an empty name.
+test_search_product_returns_matches
+    POST searchProduct with search_product=jeans -> every result has "jeans"
+    in its name OR its category (the API searches both).
+test_search_with_no_match_returns_empty_list
+    A nonsense search term -> 200 and an empty list (not an error).
+
+
+test_users_api.py
+-----------------
+test_user_lifecycle_create_login_delete
+    The full life of a user, one step after another:
+      create        -> 201 "User created!"
+      verify login  -> 200 "User exists!"
+      get details   -> 200 and the email/name match what was sent
+      delete        -> 200 "Account deleted!"
+      verify again  -> 404 (user is really gone)
+    The delete is inside "finally", so the user is removed even if a middle
+    step fails.
+test_cannot_create_duplicate_email
+    Uses the api_user fixture (a user that already exists) and tries to create
+    it again -> 400 "Email already exists!".
+test_login_with_wrong_password
+    Real email, wrong password -> 404 "User not found!".
+
+
+test_negative_api.py  (things the API must REFUSE)
+--------------------------------------------------
+test_wrong_http_method_returns_405  (3 cases)
+    POST productsList, PUT brandsList, DELETE verifyLogin
+    -> 405 "This request method is not supported."
+test_missing_parameter_returns_400  (3 cases)
+    searchProduct with no search term, verifyLogin with no email,
+    verifyLogin with no password
+    -> 400 "Bad request, ... parameter is missing in POST request."
+test_login_with_unknown_user_returns_404
+    -> 404 "User not found!"
+
+Why negative tests matter: most real bugs hide in error handling. Checking
+that bad requests are refused with the right code and message is as
+important as checking that good requests work.

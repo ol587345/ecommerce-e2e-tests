@@ -1,0 +1,39 @@
+Hybrid test (tests\hybrid\test_api_user_ui_login.py)
+====================================================
+
+What it does
+------------
+test_user_created_via_api_can_log_in_via_ui
+
+  1. SETUP through the API  (api_user fixture)
+       One POST to /api/createAccount creates a new random user.
+  2. ACTION through the UI
+       Open https://automationexercise.com/login in the browser, type that
+       user's email and password, click Login.
+  3. CHECK through the UI
+       The header shows "Logged in as <the user's name>" and the browser has
+       left the /login page.
+  4. CLEANUP through the API  (after the test, in the fixture)
+       DELETE /api/deleteAccount removes the user.
+
+Why this pattern is valuable
+----------------------------
+Creating an account through the UI on this site means filling ~15 fields
+over several pages: slow, and every extra click is a chance for a random
+failure. The API does it in one request taking well under a second.
+
+So the rule is: use the API for SETUP and CLEANUP, use the UI only for the
+thing you actually want to test. Real teams do this to make UI suites faster
+and more stable.
+
+It also proves the API and the website share the same data: a user written by
+one is readable by the other. That is a real integration check that neither
+API tests nor UI tests alone can give.
+
+How the test receives both tools
+--------------------------------
+    def test_user_created_via_api_can_log_in_via_ui(api_user, page):
+
+"api_user" (our fixture, see conftest_and_fixtures_explained.txt) gives the
+created user's data; "page" (from pytest-playwright) gives the browser tab.
+pytest prepares both before the test starts.

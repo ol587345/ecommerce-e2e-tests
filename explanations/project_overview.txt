@@ -1,0 +1,82 @@
+ecommerce-e2e-tests - Project overview
+======================================
+
+What this project is
+--------------------
+An end-to-end (E2E) test suite for online shops, written in Python with pytest
+and Playwright. It tests two free practice sites:
+
+  - Sauce Demo (https://www.saucedemo.com)
+      A fake shop with a web UI only. Used for login, cart, checkout and
+      sorting tests.
+
+  - Automation Exercise (https://automationexercise.com)
+      A fake shop with BOTH a web UI and a public REST API on the same site.
+      Used for product search/filter UI tests, form validation, all API tests
+      and the hybrid test.
+
+What is covered
+---------------
+UI tests (a real Chromium browser clicks through the site)
+  - Login: valid user, invalid user/password, empty fields, locked-out user
+  - Cart: add an item, remove an item
+  - Checkout: full flow to "Thank you for your order!" + price total check
+  - Sorting: name A-Z, Z-A, price low-high, high-low
+  - Filtering: search, filter by category, filter by brand
+  - Form validation: checkout required fields, login email required/format
+
+API tests (plain HTTP requests, no browser)
+  - Product list, brand list, product search
+  - User create -> verify login -> get details -> delete
+  - Negative cases: wrong HTTP method (405), missing parameter (400),
+    unknown user (404), duplicate email (400)
+
+Hybrid test
+  - Create a user through the API, then log in with it through the UI and
+    check the header says "Logged in as <name>".
+
+37 tests in total. They all passed against the live sites on 2026-10-14.
+
+Folder structure
+----------------
+ecommerce-e2e-tests\
+  framework\                  Reusable code that is not tests
+    config.py                 URLs, passwords, timeouts, ad hosts to block
+    api_client.py             Python wrapper around the Automation Exercise API
+    data.py                   Generates fake users with Faker
+  pages\                      Page Objects (one class per web page)
+    saucedemo\                login, inventory (products), cart, checkout
+    automation_exercise\      login, products
+  tests\
+    conftest.py               Shared fixtures (browser setup, API client, test user)
+    ui\saucedemo\             Login, cart, checkout, sorting tests
+    ui\automation_exercise\   Product search/filter, login form validation
+    api\                      Product, user and negative API tests
+    hybrid\                   API-setup + UI-verify test
+  explanations\               These text files
+  reports\                    HTML test report (created when tests run)
+  pytest.ini                  pytest settings
+  requirements.txt            Exact package versions to install
+  README.md                   Short project intro
+  .venv\                      Virtual environment (installed packages - ignore)
+
+The three layers (why the code is split this way)
+-------------------------------------------------
+  1. Tests        say WHAT is checked ("locked user sees an error").
+  2. Page Objects say HOW to use a page ("type username, click login").
+  3. Framework    holds settings, the API client and test data.
+
+If the website changes a button, you fix ONE page object, not every test.
+
+Read next
+---------
+  how_to_run.txt
+  framework_explained.txt
+  page_objects_explained.txt
+  conftest_and_fixtures_explained.txt
+  ui_tests_explained.txt
+  api_tests_explained.txt
+  hybrid_test_explained.txt
+  pytest_ini_and_requirements_explained.txt
+  interview_talking_points.txt
+  Greenlet.h header in ecommerce-e2e-tests.txt
